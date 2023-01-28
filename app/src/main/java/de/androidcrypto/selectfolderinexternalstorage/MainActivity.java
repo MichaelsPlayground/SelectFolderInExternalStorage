@@ -2,6 +2,7 @@ package de.androidcrypto.selectfolderinexternalstorage;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 
 import android.content.Intent;
 import android.net.Uri;
@@ -12,6 +13,10 @@ import android.widget.Button;
 import android.widget.TextView;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -55,12 +60,44 @@ public class MainActivity extends AppCompatActivity {
                 }
                 //Creating a File object for directory
                 File directoryPath = new File(selectedFolderUri.getPath());
+                File[] storageFiles;
+                storageFiles = directoryPath.listFiles();
+                if (storageFiles == null) {
+                    Log.e(TAG, "no files found");
+                    return;
+                }
+                System.out.println("storageFiles size: " + storageFiles.length);
+
+
+
+                File[] externalFilesDirs = ContextCompat.getExternalFilesDirs(view.getContext(), selectedFolderUri.getPath());
+                List<File> externalDirectories = new ArrayList<>();
+
+                Set<String> stringSet = new HashSet<>();
+
+                for (File file : externalFilesDirs) {
+                    String[] split = file.getAbsolutePath().split("/");
+                    if (split.length > 1) {
+                        stringSet.add(split[1]);
+                    }
+                    System.out.println("file: " + file.getAbsolutePath());
+                }
+
+                for (String str : stringSet) {
+                    externalDirectories.add(new File(str));
+                    System.out.println("add: " + str);
+                }
+                System.out.println("* externalDirectories.size: " + externalDirectories.size());
+
+                /*
                 //List of all files and directories
                 String[] contents = directoryPath.list();
                 System.out.println("List of files and directories in the specified directory:");
                 for (int i = 0; i < contents.length; i++) {
                     System.out.println(contents[i]);
                 }
+
+                 */
             }
         });
     }
