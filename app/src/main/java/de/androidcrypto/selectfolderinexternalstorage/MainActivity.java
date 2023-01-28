@@ -13,6 +13,8 @@ import android.os.Environment;
 import android.provider.DocumentsContract;
 import android.util.Log;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.TextView;
 
@@ -67,6 +69,9 @@ public class MainActivity extends AppCompatActivity {
                         + "parentFolder: " + parentFolderFromIntent;
                 Log.i(TAG, "resultString: " + resultString);
                 selectedFolder.setText(resultString);
+
+                // get files from selected folder
+                listLocalFiles(getApplicationContext(), selectedFolderFromIntent);
             }
         }
 
@@ -255,5 +260,41 @@ public class MainActivity extends AppCompatActivity {
                 selectedFolderUri = resultUri;
                 break;
         }
+    }
+
+
+    /**
+     * section for local files and folders
+     */
+
+    private void listLocalFiles(Context context, String startDirectory) {
+        Log.i(TAG, "listLocalFiles startDirectory: " + startDirectory);
+        String recursiveFolder = parentFolderFromIntent.replaceFirst("root", "");
+        File externalStorageDir = new File(Environment.getExternalStoragePublicDirectory("")
+                + recursiveFolder, startDirectory);
+        File[] files = externalStorageDir.listFiles();
+        ArrayList<String> fileNames = new ArrayList<>();
+        StringBuilder sb = new StringBuilder();
+        String separatorString = "------------------------------------------------------------------\n";
+        sb.append("files found in local folder:\n");
+        sb.append(separatorString);
+        if (files != null) {
+            for (int i = 0; i < files.length; i++) {
+                if (files[i].isFile()) {
+                    // show nothing
+                    fileNames.add(files[i].getName());
+                    sb.append(files[i].getName()).append("\n");
+                    sb.append(separatorString);
+                } else {
+                    // show nothing
+                    //fileNames.add((files[i].getName()));
+                }
+            }
+            listedFiles.setText(sb.toString());
+        }
+
+
+
+
     }
 }

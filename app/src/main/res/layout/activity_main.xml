@@ -36,12 +36,13 @@
         android:id="@+id/btnSelectFolderProvider"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="select folder Provider" />
+        android:text="select folder and list files" />
 
     <TextView
         android:id="@+id/tvListFiles"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="file list" />
+        android:text="file list"
+        android:textSize="18sp" />
 
 </LinearLayout>
