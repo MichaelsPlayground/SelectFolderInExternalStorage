@@ -4,9 +4,13 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
+import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
+import android.provider.DocumentsContract;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -20,9 +24,11 @@ import java.util.Set;
 
 public class MainActivity extends AppCompatActivity {
 
+    private static final int PERMISSION_REQUEST_CODE = 101;
     private final String TAG = "MainSelectExtFolder";
     Button selectFolder, listFiles;
-    TextView selectedFolder, listedFiles;
+    TextView selectedFolder, listedFiles, selectFolderProvider;
+    String selectedFolderFromIntent, parentFolderFromIntent;
 
     private final int REQUEST_CODE_SELECT_FOLDER = 100;
 
@@ -35,8 +41,35 @@ public class MainActivity extends AppCompatActivity {
 
         selectFolder = findViewById(R.id.btnSelectFolder);
         selectedFolder = findViewById(R.id.tvSelectedFolder);
+        selectFolderProvider = findViewById(R.id.btnSelectFolderProvider);
+
         listFiles = findViewById(R.id.btnListFiles);
         listedFiles = findViewById(R.id.tvListFiles);
+
+        Bundle extras = getIntent().getExtras();
+        System.out.println("get bundles");
+        if (extras != null) {
+            System.out.println("extras not null");
+            selectedFolderFromIntent = (String) getIntent().getSerializableExtra("browsedFolder");
+            parentFolderFromIntent = (String) getIntent().getSerializableExtra("parentFolder");
+            if (parentFolderFromIntent != null) {
+                Log.i(TAG, "parent folder: " + parentFolderFromIntent);
+            }
+            if (selectedFolderFromIntent != null) {
+                Log.i(TAG, "received folder: " + selectedFolderFromIntent);
+                System.out.println("folder not null");
+                //folderFromListFolder = folder;
+                System.out.println("ListFolder: " + selectedFolderFromIntent);
+                // todo do what has todo when folder is selected
+                //listFiles.setVisibility(View.GONE);
+                //listFolder(getBaseContext(), folder);
+                String resultString = "selectedFolder: " + selectedFolderFromIntent + "\n"
+                        + "parentFolder: " + parentFolderFromIntent;
+                Log.i(TAG, "resultString: " + resultString);
+                selectedFolder.setText(resultString);
+            }
+        }
+
 
         selectFolder.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -50,6 +83,34 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        selectFolderProvider.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Log.i(TAG, "selectFolderProvider");
+
+                Intent intent = new Intent(MainActivity.this, BrowseFolder.class);
+                startActivity(intent);
+                //finish();
+
+                /*
+                File localFolder = Environment.getExternalStoragePublicDirectory("");
+                System.out.println("localFolder: " + localFolder);
+                java.io.File[] storageFiles;
+                storageFiles = localFolder.listFiles();
+                if (storageFiles == null) {
+                    Log.e(TAG, "no files found");
+                    return;
+                }
+                System.out.println("storageFiles size: " + storageFiles.length);
+                for (int i = 0; i < storageFiles.length; i++) {
+                    File file = storageFiles[i];
+                    System.out.println("* File: " + file.getAbsolutePath());
+                }
+
+                 */
+            }
+        });
+
         listFiles.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -58,10 +119,20 @@ public class MainActivity extends AppCompatActivity {
                     Log.e(TAG, "select a folder first before listing files");
                     return;
                 }
+
+                // https://commonsware.com/blog/2016/03/15/how-consume-content-uri.html
+
+                System.out.println("* selectedFolderUri: " + selectedFolderUri);
+
+                String path = getPath(view.getContext(), selectedFolderUri);
+                System.out.println("* path: " + path);
+                File localFolder = new File(path);
+                System.out.println("* localFolder: " + localFolder.getAbsolutePath());
+
                 //Creating a File object for directory
                 File directoryPath = new File(selectedFolderUri.getPath());
                 File[] storageFiles;
-                storageFiles = directoryPath.listFiles();
+                storageFiles = localFolder.listFiles();
                 if (storageFiles == null) {
                     Log.e(TAG, "no files found");
                     return;
@@ -100,6 +171,64 @@ public class MainActivity extends AppCompatActivity {
                  */
             }
         });
+/*
+        // select all files access
+        if (SDK_INT >= Build.VERSION_CODES.R) {
+            if (Environment.isExternalStorageManager()) {
+                startActivity(new Intent(this, MainActivity.class));
+            } else { //request for the permission
+                Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
+                Uri uri = Uri.fromParts("package", getPackageName(), null);
+                intent.setData(uri);
+                startActivity(intent);
+            }
+        } else {
+            //below android 11=======
+            startActivity(new Intent(this, MainActivity.class));
+            ActivityCompat.requestPermissions(this, new String[]{WRITE_EXTERNAL_STORAGE}, PERMISSION_REQUEST_CODE);
+        }
+
+ */
+    }
+
+    // https://stackoverflow.com/a/46889812/8166854
+    public static String getPath(final Context context, final Uri uri) {
+        final boolean isKitKat = Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT;
+
+        boolean isDocUri = DocumentsContract.isDocumentUri(context, uri);
+        System.out.println("* isDocUri: " + isDocUri);
+
+        // DocumentProvider
+        if (isKitKat && DocumentsContract.isDocumentUri(context, uri)) {
+            System.out.println("* isKitKat && DocumentsContract.isDocumentUri");
+            System.out.println("getPath() uri: " + uri.toString());
+            System.out.println("getPath() uri authority: " + uri.getAuthority());
+            System.out.println("getPath() uri path: " + uri.getPath());
+
+            // ExternalStorageProvider
+            if ("com.android.externalstorage.documents".equals(uri.getAuthority())) {
+                final String docId = DocumentsContract.getDocumentId(uri);
+                final String[] split = docId.split(":");
+                final String type = split[0];
+                System.out.println("getPath() docId: " + docId + ", split: " + split.length + ", type: " + type);
+
+                // This is for checking Main Memory
+                if ("primary".equalsIgnoreCase(type)) {
+                    if (split.length > 1) {
+                        return Environment.getExternalStorageDirectory() + "/" + split[1] + "/";
+                    } else {
+                        return Environment.getExternalStorageDirectory() + "/";
+                    }
+                    // This is for checking SD Card
+                } else {
+                    return "storage" + "/" + docId.replace(":", "/");
+                }
+
+            }
+        } else {
+            System.out.println("* is NOT KitKat && DocumentsContract.isDocumentUri");
+        }
+        return null;
     }
 
     @Override

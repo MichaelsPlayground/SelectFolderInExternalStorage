@@ -32,6 +32,12 @@
         android:layout_height="wrap_content"
         android:text="list files" />
 
+    <Button
+        android:id="@+id/btnSelectFolderProvider"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="select folder Provider" />
+
     <TextView
         android:id="@+id/tvListFiles"
         android:layout_width="match_parent"
