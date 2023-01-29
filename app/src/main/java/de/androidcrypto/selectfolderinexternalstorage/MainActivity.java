@@ -1,7 +1,11 @@
 package de.androidcrypto.selectfolderinexternalstorage;
 
+import static android.Manifest.permission.WRITE_EXTERNAL_STORAGE;
+import static android.os.Build.VERSION.SDK_INT;
+
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import android.content.Context;
@@ -11,6 +15,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.DocumentsContract;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
@@ -29,6 +34,7 @@ public class MainActivity extends AppCompatActivity {
     private static final int PERMISSION_REQUEST_CODE = 101;
     private final String TAG = "MainSelectExtFolder";
     Button selectFolder, listFiles;
+    Button grantPermissions;
     TextView selectedFolder, listedFiles, selectFolderProvider;
     String selectedFolderFromIntent, parentFolderFromIntent;
 
@@ -47,6 +53,8 @@ public class MainActivity extends AppCompatActivity {
 
         listFiles = findViewById(R.id.btnListFiles);
         listedFiles = findViewById(R.id.tvListFiles);
+
+        grantPermissions = findViewById(R.id.btnGrantPermissions);
 
         Bundle extras = getIntent().getExtras();
         System.out.println("get bundles");
@@ -97,22 +105,6 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(intent);
                 //finish();
 
-                /*
-                File localFolder = Environment.getExternalStoragePublicDirectory("");
-                System.out.println("localFolder: " + localFolder);
-                java.io.File[] storageFiles;
-                storageFiles = localFolder.listFiles();
-                if (storageFiles == null) {
-                    Log.e(TAG, "no files found");
-                    return;
-                }
-                System.out.println("storageFiles size: " + storageFiles.length);
-                for (int i = 0; i < storageFiles.length; i++) {
-                    File file = storageFiles[i];
-                    System.out.println("* File: " + file.getAbsolutePath());
-                }
-
-                 */
             }
         });
 
@@ -144,8 +136,6 @@ public class MainActivity extends AppCompatActivity {
                 }
                 System.out.println("storageFiles size: " + storageFiles.length);
 
-
-
                 File[] externalFilesDirs = ContextCompat.getExternalFilesDirs(view.getContext(), selectedFolderUri.getPath());
                 List<File> externalDirectories = new ArrayList<>();
 
@@ -164,41 +154,33 @@ public class MainActivity extends AppCompatActivity {
                     System.out.println("add: " + str);
                 }
                 System.out.println("* externalDirectories.size: " + externalDirectories.size());
-
-                /*
-                //List of all files and directories
-                String[] contents = directoryPath.list();
-                System.out.println("List of files and directories in the specified directory:");
-                for (int i = 0; i < contents.length; i++) {
-                    System.out.println(contents[i]);
-                }
-
-                 */
             }
         });
-/*
-        // select all files access
-        if (SDK_INT >= Build.VERSION_CODES.R) {
-            if (Environment.isExternalStorageManager()) {
-                startActivity(new Intent(this, MainActivity.class));
-            } else { //request for the permission
-                Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
-                Uri uri = Uri.fromParts("package", getPackageName(), null);
-                intent.setData(uri);
-                startActivity(intent);
-            }
-        } else {
-            //below android 11=======
-            startActivity(new Intent(this, MainActivity.class));
-            ActivityCompat.requestPermissions(this, new String[]{WRITE_EXTERNAL_STORAGE}, PERMISSION_REQUEST_CODE);
-        }
 
- */
+        grantPermissions.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (SDK_INT >= Build.VERSION_CODES.R) {
+                    if (Environment.isExternalStorageManager()) {
+                        startActivity(new Intent(view.getContext(), MainActivity.class));
+                    } else { //request for the permission
+                        Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
+                        Uri uri = Uri.fromParts("package", getPackageName(), null);
+                        intent.setData(uri);
+                        startActivity(intent);
+                    }
+                } else {
+                    //below android 11=======
+                    startActivity(new Intent(view.getContext(), MainActivity.class));
+                    ActivityCompat.requestPermissions(MainActivity.this, new String[]{WRITE_EXTERNAL_STORAGE}, PERMISSION_REQUEST_CODE);
+                }
+            }
+        });
     }
 
     // https://stackoverflow.com/a/46889812/8166854
     public static String getPath(final Context context, final Uri uri) {
-        final boolean isKitKat = Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT;
+        final boolean isKitKat = SDK_INT >= Build.VERSION_CODES.KITKAT;
 
         boolean isDocUri = DocumentsContract.isDocumentUri(context, uri);
         System.out.println("* isDocUri: " + isDocUri);
@@ -292,9 +274,5 @@ public class MainActivity extends AppCompatActivity {
             }
             listedFiles.setText(sb.toString());
         }
-
-
-
-
     }
 }

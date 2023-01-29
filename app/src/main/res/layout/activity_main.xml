@@ -45,4 +45,10 @@
         android:text="file list"
         android:textSize="18sp" />
 
+    <Button
+        android:id="@+id/btnGrantPermissions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="grant permissions" />
+
 </LinearLayout>
